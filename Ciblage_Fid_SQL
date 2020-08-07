@@ -1,0 +1,342 @@
+--Corsair / Levana / SFMC / Ciblage Fidelisation / Jan2020 
+
+numero Isabelle: 0615255171
+
+--Ciblage_ChangementStatut V2
+SELECT 
+c.Id, FirstName, LastName,Cagnotte__pc, Statut__pc, 
+PersonEmail, Num_Carte_A2F_active__pc, Volume_achat_12_mois__pc,
+Carte.Name, Ancien_statut_de_la_carte_au_31_12__c, 
+Carte_Active__c,Civilite__c, PersonContactId,
+Date_changement_de_statut__c,
+Carte.Date_de_fin_de_validite__c,  Carte.Type_de_carte__c
+FROM Account_Salesforce c
+Inner join Carte_de_fidelite__c_Salesforce Carte on c.PersonContactId = Carte.Contact__c
+WHERE
+NUM_CARTE_A2F_ACTIVE__PC is not null
+AND PersonEmail is not null
+AND Carte_Active__c = 'true'
+AND CONVERT(date, Date_changement_de_statut__c) = CONVERT(date, Dateadd(d, -1, GetDate()))
+AND(
+(lower(Type_de_carte__c) = 'le club gold' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club')
+OR
+(lower(Type_de_carte__c) = 'le club platinum' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club')
+OR
+(lower(Type_de_carte__c) = 'le club platinum' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club gold'))
+
+
+--Ciblage_Releve_Compte V2
+Select 
+c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,
+c.Cagnotte__pc,
+c.Num_Carte_A2F_active__pc,
+cf.Date_de_fin_de_validite__c,  
+Carte_Active__c
+From Account_Salesforce c
+Inner Join Carte_de_fidelite__c_Salesforce cf on cf.Contact__c = c.PersonContactId
+Inner Join Coupon_de_Vol__c_Salesforce cv on cv.Contact__c = c.PersonContactId
+Where c.PersonEmail is not null
+And c.Num_Carte_A2F_active__pc is not null
+AND Carte_Active__c = 'true'
+AND cv.Dateduvol__c between dateadd(d, -730, getdate()) and getdate()
+AND Nombre_de_vols_realises__pc > 0
+group by c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,c.Cagnotte__pc,c.Num_Carte_A2F_active__pc,cf.Date_de_fin_de_validite__c,
+Carte_Active__c
+
+
+--Ciblage_Recalcul de statut Descente V2
+SELECT 
+c.Id, FirstName, LastName,Cagnotte__pc, Statut__pc, 
+PersonEmail, Num_Carte_A2F_active__pc, Volume_achat_12_mois__pc,
+Carte.Name, Ancien_statut_de_la_carte_au_31_12__c, 
+Carte_Active__c,Civilite__c, PersonContactId,
+Date_changement_de_statut__c,
+Carte.Date_fin_val_statut__c,  Carte.Type_de_carte__c
+FROM Account_Salesforce c
+Inner join Carte_de_fidelite__c_Salesforce Carte on c.PersonContactId = Carte.Contact__c
+WHERE
+ c.Num_Carte_A2F_active__pc is not null
+AND Carte_Active__c = 'true'
+AND convert(varchar,Date_changement_de_statut__c,101) = convert(varchar, DATEADD(YEAR,DATEDIFF(YEAR, -1, getdate() )-1, -1), 101)
+AND(
+(lower(Type_de_carte__c) = 'le club gold' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club platinum')
+OR
+(lower(Type_de_carte__c) = 'le club' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club platinum')
+OR
+(lower(Type_de_carte__c) = 'le club' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club gold'))
+
+
+
+--Ciblage_Recalcul de statut Maintien
+SELECT 
+c.Id, FirstName, LastName,Cagnotte__pc, Statut__pc, 
+PersonEmail, Num_Carte_A2F_active__pc, Volume_achat_12_mois__pc,
+Carte.Name, Ancien_statut_de_la_carte_au_31_12__c, 
+Carte_Active__c,Civilite__c, PersonContactId,
+Date_changement_de_statut__c,
+Carte.Date_fin_val_statut__c,  Carte.Type_de_carte__c
+FROM Account_Salesforce c
+Inner join Carte_de_fidelite__c_Salesforce Carte on c.PersonContactId = Carte.Contact__c
+WHERE
+ c.Num_Carte_A2F_active__pc is not null
+AND Carte_Active__c = 'true'
+AND convert(varchar,Date_changement_de_statut__c,101) = convert(varchar, DATEADD(YEAR,DATEDIFF(YEAR, -1, getdate() )-1, -1), 101)
+AND(
+(lower(Type_de_carte__c) = 'le club platinum' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club platinum')
+OR
+(lower(Type_de_carte__c) = 'le club gold' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club gold'))
+
+
+--Ciblage_Bon_Plan OLD
+SELECT  
+c.Id, c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,c.PersonBirthdate,
+c.Libelle_Statut_Engagement__c,
+cv.Dateduvol__c
+From Account_Salesforce c
+Left Join Coupon_de_Vol__c_Salesforce cv on cv.Contact__c = c.PersonContactId
+Where cv.Dateduvol__c not between getdate() and dateadd(d, 30, getdate())
+AND Nombre_de_vols_realises__pc > 0
+AND Libelle_Statut_Engagement__c in ('Super-actif','Hyper-actif')
+AND Stop_email_Corsairfly__pc = 'false'
+AND (FLOOR(DATEDIFF(DAY, convert(varchar,PersonBirthdate,101), convert(varchar,getdate(),101)) / 365.25) >= 16 OR PersonBirthdate ='')
+AND (lower(BillingCountry) = 'france' OR (BillingCountry = '' AND  BillingPostalCode  NOT  LIKE '97%'))
+AND c.PersonEmail is not null
+AND c.PersonEmail not like ('%airfran%')
+AND c.PersonEmail not like ('%air-aust%')
+AND c.PersonEmail not like ('%frenchbee%')
+AND c.PersonEmail not like ('%iairgroup%')
+AND c.PersonEmail not like ('%@delta%')
+AND c.PersonEmail not like ('%@transat%')
+AND c.PersonEmail not like ('%@emirates%')
+AND c.PersonEmail not like ('%airmauritius%')
+AND c.PersonEmail not like ('%@ba.com%')
+--Ciblage_Bon_Plan VF 344498
+SELECT  
+c.Id, c.PersonContactId, 
+c.FirstName, c.LastName, 
+c.PersonEmail,c.PersonBirthdate,
+c.Libelle_Statut_Engagement__c
+From Account_Salesforce c
+WHERE Libelle_Statut_Engagement__c in ('Super-actif','Hyper-actif')
+AND Stop_email_Corsairfly__pc = 'false'
+AND ((FLOOR(DATEDIFF(DAY, convert(varchar,PersonBirthdate,101), convert(varchar,getdate(),101)) / 365.25) >= 16) OR PersonBirthdate ='' OR PersonBirthdate is null)
+AND (lower(BillingCountry) = 'france' OR (BillingCountry = '' AND  BillingPostalCode  NOT  LIKE '97%'))
+AND (c.PersonEmail is not null OR c.PersonEmail != '')
+AND c.PersonEmail not like ('%airfran%')
+AND c.PersonEmail not like ('%air-aust%')
+AND c.PersonEmail not like ('%frenchbee%')
+AND c.PersonEmail not like ('%iairgroup%')
+AND c.PersonEmail not like ('%@delta%')
+AND c.PersonEmail not like ('%@transat%')
+AND c.PersonEmail not like ('%@emirates%')
+AND c.PersonEmail not like ('%airmauritius%')
+AND c.PersonEmail not like ('%@ba.com%')x
+
+"Ciblage : 
+
+> Statut d'engagement (Libelle_Statut_Engagement__c) : hyper actif + super actif
+
+> Stop_email_Corsairfly__pc = Faux
+
+> Date de naissance (PersonBirthdate) = +16 ou vide
+
+> Pays (BillingCountry) = France ou vide
+
+> Si Pays (BillingCountry) = vide
+then check--> BillingPostalCode  
+> Billing Zip/Postal Code (BillingPostalCode) = ne commence pas par 97
+
+
+> Email (PersonEmail) = pas vide
+
+> Emails à exclure :  Email (PersonEmail) contient :
+- airfran
+- aircara
+- air-aust
+- frenchbee
+- iairgroup
+- @delta
+- @transat
+- @emirates
+- airmauritius
+- @ba.com
+
+> Date du vol (Dateduvol__c) --> le nom du champ Amadeus = j+30 (exclure les clients qui ont un vol dans 30 jours) ; inclure aussi les clients sans date de vol
+
+"
+
+
+--Ciblage Avant Vol J-7
+SELECT  
+c.Id, c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,c.PersonBirthdate,
+c.Libelle_Statut_Engagement__c,
+cv.Dateduvol__c, cv.Statutdevol__c,
+cv.NVol__c,
+cv.APD__c,	
+cv.APA__c,
+v.Date_depart_programmee_LT__c,
+v.Date_darrivee_programmee_LT__c,
+cv.PNR__c ,
+cv.Vol_commercial__c,
+v.Sondage_Online__c,
+cv.Office_Id__c
+From Account_Salesforce c
+Inner Join Coupon_de_Vol__c_Salesforce cv on cv.Contact__c = c.PersonContactId
+left Join Vol__c_Salesforce v on v.Id = cv.Vol_commercial__c
+Where convert(Date,cv.Dateduvol__c) between  convert(Date,getdate()) and convert(Date,dateadd(d, 7, getdate()))
+AND cv.Statutdevol__c = 'Emis'
+AND (FLOOR(DATEDIFF(DAY, convert(varchar,PersonBirthdate,101), convert(varchar,getdate(),101)) / 365.25) >= 16 OR PersonBirthdate ='' OR PersonBirthdate is not null)
+AND c.PersonEmail is not null
+AND cv.Classedetransport__c  in ('Business'	, 'Premium')
+AND cv.Office_Id__c like ('%ss%')
+
+
+--Ciblage Avant Vol J-5
+SELECT  
+c.Id, c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,c.PersonBirthdate,
+c.Libelle_Statut_Engagement__c,
+cv.Dateduvol__c, cv.Classedetransport__c, cv.Statutdevol__c
+From Account_Salesforce c
+Inner Join Coupon_de_Vol__c_Salesforce cv on cv.Contact__c = c.PersonContactId
+Where convert(varchar,cv.Dateduvol__c,101) = convert(varchar,dateadd(d, 5, getdate()),101)
+AND (FLOOR(DATEDIFF(DAY, convert(varchar,PersonBirthdate,101), convert(varchar,getdate(),101)) / 365.25) >= 16 OR PersonBirthdate ='')
+AND cv.Statutdevol__c = 'Emis'
+AND c.PersonEmail is not null
+AND cv.Office_Id__c like ('%ss%')
+
+--Ciblage Avant Vol J-3
+SELECT  
+c.Id, c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,c.PersonBirthdate,
+c.Libelle_Statut_Engagement__c,
+cv.Dateduvol__c, cv.Classedetransport__c, cv.Statutdevol__c
+From Account_Salesforce c
+Inner Join Coupon_de_Vol__c_Salesforce cv on cv.Contact__c = c.PersonContactId
+Where convert(varchar,cv.Dateduvol__c,101) = convert(varchar,dateadd(d, 3, getdate()),101)
+AND (FLOOR(DATEDIFF(DAY, convert(varchar,PersonBirthdate,101), convert(varchar,getdate(),101)) / 365.25) >= 16 OR PersonBirthdate ='')
+AND cv.Statutdevol__c = 'Emis'
+AND c.PersonEmail is not null
+AND cv.Office_Id__c like ('%ss%')
+
+--Ciblage Après Vol J+1
+SELECT  
+c.Id, c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,c.PersonBirthdate,
+c.Libelle_Statut_Engagement__c,
+cv.Dateduvol__c, cv.Id as IdCouponVol, v.Typedavion__c, cv.APA__c, cv.APD__c, Immatriculation_avion__c, cv.Name,
+v.Date_depart_programmee_LT__c, v.Date_darrivee_programmee_LT__c,
+Ndesiege__c, Classedetransport__c, cv.NVol__c
+From Account_Salesforce c
+Inner Join Coupon_de_Vol__c_Salesforce cv on cv.Contact__c = c.PersonContactId
+Inner Join Vol__c_Salesforce v on v.Id = cv.Vol_commercial__c
+Where   cv.Statutdevol__c = 'vole'
+AND Sondage_Online__c = 'true'
+AND (cv.Office_Id__c like ('%ss%') OR Num_Carte_A2F_active__pc is not null OR Num_Carte_A2F_active__pc !='')
+AND Delta_arrivee_min__c < 300
+AND convert(varchar,cv.Dateduvol__c,101) between convert(varchar,dateadd(d,-2, getdate()),101)  and convert(varchar, getdate()-1,101)
+
+
+cv.NVol__c
+ v.APD__c	
+ v.APA__c	 
+ v.Date_depart_programmee_LT__c
+ v.Date_darrivee_programmee_LT_
+cv.PNR__c = numero reservation
+num_carte_a2f_active__pc
+
+
+S4UI82 pnr
+
+ SELECT 
+c.PersonEmail , COUNT(*) as "totalEmailCount"
+ From   AccountB2C_nonDormants c
+ Group  BY PersonEmail
+  Having Count(*) > 1
+
+   SELECT c.Id, c.PersonContactId, 
+c.FirstName, c.LastName, 
+c.PersonEmail, PersonBirthDate
+From Customer_Account_Salesforce c
+Where (c.Libelle_Statut_Engagement__c = 'Super-actif' OR c.Libelle_Statut_Engagement__c ='Hyper-actif' OR c.Libelle_Statut_Engagement__c ='actif')
+AND c.PersonEmail in ( select d.PersonEmail from dedupAccountB2C d)
+
+
+
+Zombies 
+SELECT x.*
+FROM 
+(
+    SELECT c.Id, c.PersonContactId, 
+    c.FirstName, c.LastName, 
+    c.PersonEmail, PersonBirthDate,
+    row_number()over(partition by PersonEmail ORDER BY PersonBirthDate DESC) AS row
+
+    From Customer_Account_Salesforce c
+    Where c.PersonEmail in
+        ( SELECT 
+         PersonEmail
+         from Customer_Account_Salesforce c
+         where Libelle_Statut_Engagement__c in ('Super-actif','Hyper-actif') 
+         Group  BY PersonEmail
+         Having Count(*) > 1)
+) x
+
+WHERE x.row > 1 
+
+Survivors 
+SELECT x.*
+FROM 
+(
+    SELECT c.Id, c.PersonContactId, 
+    c.FirstName, c.LastName, 
+    c.PersonEmail, PersonBirthDate,
+    row_number()over(partition by PersonEmail ORDER BY CONVERT(DateTime, PersonBirthDate,101)  DESC) AS row
+
+    From Customer_Account_Salesforce c
+    Where c.PersonEmail in
+        ( SELECT 
+         PersonEmail
+         from Customer_Account_Salesforce c
+         where Libelle_Statut_Engagement__c in ('Super-actif','Hyper-actif') 
+         Group  BY PersonEmail
+         Having Count(*) > 1)
+) x
+
+WHERE x.row = 1
+  
+
+Exclusion Ciblage_Bon_Plan
+
+SELECT  top 10
+c.Id, c.PersonContactId, 
+c.FirstName, c.LastName, 
+c.PersonEmail,c.PersonBirthdate,
+c.Libelle_Statut_Engagement__c,
+c.BillingCountry,c.BillingPostalCode,
+c.Num_Carte_A2F_active__pc, c.Cagnotte__pc,
+Stop_email_Corsairfly__pc
+
+From Customer_Account_Salesforce c
+
+where c.Libelle_Statut_Engagement__c in ('Super-actif','Hyper-actif')
+AND (
+    c.Stop_email_Corsairfly__pc = 'true'
+OR BillingPostalCode like ('97%')
+OR c.PersonEmail like ('%airfran%')
+OR c.PersonEmail like ('%air-aust%')
+OR c.PersonEmail like ('%frenchbee%')
+OR c.PersonEmail like ('%iairgroup%')
+OR c.PersonEmail like ('%@delta%')
+OR c.PersonEmail like ('%@transat%')
+OR c.PersonEmail like ('%@emirates%')
+OR c.PersonEmail like ('%airmauritius%')
+OR c.PersonEmail like ('%@ba.com%')
+OR FLOOR(DATEDIFF(DAY, convert(date,PersonBirthdate), getdate()) / 365.25) < 16)
+
+%%[
+set @Trigramme = AttributeValue("APD__c")
+set @rows = LookupRows("Table correspondance aéroports", "Trigramme", @Trigramme)
+set @rowCount = rowcount(@rows)
+IF @rowCount > 0 then
+set @row = Row(@rows, 1) 
+set @Aeroport = Field(@row,"Aeroport")
+ENDIF
+]%%

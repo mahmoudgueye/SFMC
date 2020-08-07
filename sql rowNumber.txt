@@ -1,0 +1,30 @@
+SELECT x.*
+FROM 
+(
+Select 
+SP.Id,
+SP.AreWeFollowing,
+SP.CreatedDate,
+SP.AppLanguage__c as 'AppLanguage',
+SP.ParentId,
+SP.IsDeleted,
+SP.IsFollowingUs,
+SP.LastModifiedDate,
+SP.LastSubscriptionDate__c as 'LastSubscriptionDate',
+SP.LastUnsubscriptionDate__c as 'LastUnsubscription',
+SP.RecruitmentChannel__c as 'RecruitmentChannel',
+SP.Name,
+SP.Provider,
+SP.ExternalId,
+SP.MediaProvider,
+SP.SocialUserNickname__c as 'SocialUserNickname',
+SP.VerificationFlag__c as 'VerificationFlag',
+SP.KeringId__c as "KeringId",
+SP.SocialKeringId__c as "SocialKeringId",
+row_number()over(partition by SP.SocialKeringId__c ORDER BY SP.LastModifiedDate DESC) AS row,
+CONVERT (VARCHAR(25), EventDate, 121) AS 'CSTEventDateMilli'
+
+From ENT.SocialPersona_Salesforce SP inner join clients C on SP.KeringId__c = C.KeringID 
+) x
+
+WHERE x.row = 1

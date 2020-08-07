@@ -1,0 +1,52 @@
+Select 
+AccountId, Actif12DerniersMois__c, Actif6DerniersMois__c, ActifUneConnexion__c, ActionsIntervention__c, 
+Adhesion__c, AdressePrincipale__c, AgeAutomatique__c, CDVER__c, CentreInterets__c, CodeOrigineDernierDonTemp__c, 
+CodeOriginePremierDonTemp__c, ContactParent__c, CreatedById, CreatedDate, DateDeces__c, DateDernierDonTemp__c, 
+DateNaissance__c, DatePremierDonTemp__c, Delegation_Dicocesaine__c, DeuxiemeContactNomInterlocuteurRDV__c,
+Email, EntiteCCFD__c, Equipe_locale__c, FirstName, Gender__c, HasOptedOutOfEmail, 
+Id, IndividualId, InterlocuteurPremierContactCCFD__c, JourNaissance__c, LanguesTraduction__c, 
+LastModifiedById, LastModifiedDate, LastName, MasterRecordId, MobilePhone, ModeReglementDernierDonTemp__c, 
+ModeReglementPremierDonTemp__c, MoisNaissance__c, MontantDernierDonTemp__c, MontantPremierDonTemp__c, 
+MSERattachement__c, Name, Nom_Equipe_locale__c, npo02__Household__c, npo02__LastMembershipAmount__c, 
+npsp__Batch__c, npsp__Current_Address__c, npsp__Do_Not_Contact__c, npsp__Primary_Affiliation__c, OwnerId, 
+PrelevementAutomatiqueTemp__c, RecordTypeId, Region__c, ReportsToId, SuiviSpecifiqueProjet__c, 
+StopAppelWebDonCCFD__c, StopAppelWebDonFondation__c, StopGlobalWebCCFD__c, StopGlobalWebFondation__c,
+StopNewsletterWebCCFD__c, StopNewsletterWebFondation__c, StopPACCFD__c, StopPAFondation__c,
+c.Salutation, TypeContact__c,
+
+
+CASE WHEN civ.CiviliteCCFD IS NULL THEN 'Cher '+TypeContact__c
+WHEN civ.CiviliteCCFD='' THEN 'Cher '+TypeContact__c
+ELSE civ.CiviliteCCFD
+END  as 'CiviliteCCFD',
+
+lastAction.Thematique__c as 'Famille',
+firstAction.Medium__c as 'SupportPremiereAction',
+
+CASE WHEN  exists (select Contact__c from Jonction_ActionCentreInteret_Contact j   
+                    Inner join Referentiel_Action_CentreInteret A on j.ActionCentreInteret__c = A.Id 
+                    where  c.Id = Contact__c AND Thematique__c = 'Spiritualité')       
+    THEN 'true'
+    ELSE 'false'
+END as 'Spiritualite'
+
+From Contact_Salesforce c
+
+/*civilité*/
+left join CiviliteCCFD civ on upper(civ.Salutation)=upper(c.Salutation) 
+/*action la plus recent*/
+left join (SELECT x.* FROM  
+            (select Contact__c, Thematique__c,  
+            row_number()over(partition by Contact__c ORDER BY DateAction__c DESC) AS row
+            from Jonction_ActionCentreInteret_Contact j 
+            Inner join Referentiel_Action_CentreInteret A on j.ActionCentreInteret__c = A.Id 
+            ) x WHERE x.row = 1 
+        ) lastAction  on lastAction.Contact__c = c.Id 
+/*première action*/
+left join (SELECT x.* FROM  
+            (select Contact__c, Medium__c,  
+            row_number()over(partition by Contact__c ORDER BY DateAction__c ASC) AS row
+            from Jonction_ActionCentreInteret_Contact j 
+            Inner join Referentiel_Action_CentreInteret A on j.ActionCentreInteret__c = A.Id 
+            ) x WHERE x.row = 1 
+        ) firstAction  on firstAction.Contact__c = c.Id 

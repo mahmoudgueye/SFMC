@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Campaign Creation</title>
+        <link href="http://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css" rel="stylesheet">
+        <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+        <script src="http://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+        <style>
+        </style>
+        <!-- Javascript -->
+        <script>
+         $(function() {
+            var projects = [];
+            try{
+              for (var i=1; i <= 500; i++){
+                var textDE = document.getElementById('de'+i).textContent;
+                projects.push(textDE);
+                console.log('############## '+textDE);
+              }
+            }catch(err){}
+
+         $( "#project" ).autocomplete({
+            minLength: 0,
+            source: projects,
+            focus: function( event, ui ) {
+               $( "#project" ).val( ui.item.value);
+               $( "#project-id" ).val( ui.item.value );
+                  return false;
+               },
+            select: function( event, ui ) {
+               $( "#project" ).val( ui.item.value);
+               $( "#project-id" ).val( ui.item.value );
+               return false;
+            }
+         })
+         .data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+            return $( "<li>" )
+            .append( "<a>" + item.value + "<br>" + "</a>" )
+            .appendTo( ul );
+         };
+         });
+
+
+  $(function() {
+            var projects2 = [];
+            try{
+              for (var i=1; i <= 500; i++){
+                var textDE = document.getElementById('produit'+i).textContent;
+                projects2.push(textDE);
+                console.log('############## '+textDE);
+              }
+            }catch(err){}
+
+         $( "#project2" ).autocomplete({
+            minLength: 0,
+            source: projects2,
+            focus: function( event, ui ) {
+               $( "#project2" ).val( ui.item.value);
+               $( "#project2-id" ).val( ui.item.value );
+                  return false;
+               },
+            select: function( event, ui ) {
+               $( "#project2" ).val( ui.item.value);
+               $( "#project2-id" ).val( ui.item.value );
+               return false;
+            }
+         })
+         .data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+            return $( "<li>" )
+            .append( "<a>" + item.value + "<br>" + "</a>" )
+            .appendTo( ul );
+         };
+         });
+            
+           function showhiddendiv(){
+
+            art = document.getElementById('project2').value;
+            nomcampagne = document.getElementById('nomcampagne').value;
+
+            var select = document.getElementById("typecampagne");
+            var answer = select.options[select.selectedIndex].value;
+
+            target = document.getElementById('project').value; 
+
+            document.getElementById('offrelabel').textContent  = '%%=Lookup("CONTACT","NOM_CONTACT","CONTACT_ID", "0032000000aGgmhAAC")=%%';
+            document.getElementById('offredate').textContent  = '%%=Lookup("CONTACT","NOM_CONTACT","CONTACT_ID", "0032000000aGgmhAAC")=%%';
+
+            startdate = document.getElementById('startdate').value;
+            enddate = document.getElementById('enddate').value;
+
+
+            console.log('OOOOOOOOOOOOOOOOOOOOOOOOOOOO '+art);
+
+            window.location="http://pub.s7.exacttarget.com/ie4yo3gx0bw?offre="+art+"&nomcampagne="+nomcampagne+"&typecampagne="+answer+"&target="+target+"&startdate="+startdate+"&enddate="+enddate;
+
+           }
+
+           function redirectok(){
+
+            art = document.getElementById('project2').value;
+            nomcampagne = document.getElementById('nomcampagne').value;
+
+            var select = document.getElementById("typecampagne");
+            var answer = select.options[select.selectedIndex].value;
+
+            target = document.getElementById('project').value; 
+
+            document.getElementById('offrelabel').textContent  = '%%=Lookup("CONTACT","NOM_CONTACT","CONTACT_ID", "0032000000aGgmhAAC")=%%';
+            document.getElementById('offredate').textContent  = '%%=Lookup("CONTACT","NOM_CONTACT","CONTACT_ID", "0032000000aGgmhAAC")=%%';
+
+            startdate = document.getElementById('startdate').value;
+            enddate = document.getElementById('enddate').value;
+   if(answer == "Push"){
+              if(art.length > 0 && nomcampagne.length > 0 && answer.length > 0 && target.length > 0 && startdate.length > 0 && enddate.length > 0){
+
+              window.location="http://pub.s7.exacttarget.com/hhpuvlgh4zn?offre="+art+"&nomcampagne="+nomcampagne+"&typecampagne="+answer+"&target="+target+"&startdate="+startdate+"&enddate="+enddate;
+              }
+              else{
+
+                  alert("Veuillez renseigner tous les champs avant de valider la création de votre campagne !");
+              }
+           }else if(answer == "Print"){
+            if(nomcampagne.length > 0 && answer.length > 0 && target.length > 0 && startdate.length > 0 && enddate.length > 0){
+
+              window.location="http://pub.s7.exacttarget.com/hhpuvlgh4zn?nomcampagne="+nomcampagne+"&typecampagne="+answer+"&target="+target+"&startdate="+startdate+"&enddate="+enddate;
+              }
+              else{
+
+                  alert("Veuillez renseigner tous les champs avant de valider la création de votre campagne !");
+              }
+           }
+           }
+
+            function myFunction3(){
+
+            var select = document.getElementById("typecampagne");
+            var answer = select.options[select.selectedIndex].value;
+
+            if (answer == "Print"){
+            document.getElementById('hiddendiv').style.display = 'none';
+            document.getElementById('buttonprevisu').style.display = 'none';
+            document.getElementById('project2-id').style.display = 'none';
+            document.getElementById('project2').style.display = 'none';
+            document.getElementById('labelarticle').style.display = 'none';
+            document.getElementById('project2-id').value = '';
+            document.getElementById('project2').value = '';
+            }
+            else{
+            document.getElementById('buttonprevisu').style.display = 'inline-block';
+            document.getElementById('project2-id').style.display = 'inline-block';
+            document.getElementById('project2').style.display = 'inline-block';
+            document.getElementById('labelarticle').style.display = 'inline-block';
+             document.getElementById('project2-id').value = '';
+            document.getElementById('project2').value = '';
+            }
+    }
+
+
+      </script>
+        <script language="javascript" runat="server">
+Platform.Load("core","1");
+
+
+var complexFilterPart1 = {
+                LeftOperand:{
+                    Property:"Name",
+                   SimpleOperator:"like",
+                    Value:"GMPA_"
+                },                                                           
+                LogicalOperator:"OR",
+                RightOperand:{
+                    Property:"Name",
+                    SimpleOperator:"like",
+                    Value:"PW_"
+        }};
+
+var complexFilter = {
+                LeftOperand:complexFilterPart1,
+                LogicalOperator:"AND",
+                RightOperand:{
+                    Property:"CategoryID",
+                    SimpleOperator:"Equals",
+                    Value:"4480"
+        }};
+
+
+
+//SI DE dans la BU associ�e
+var des = DataExtension.Retrieve(r);
+
+//SI DE Dans toutes les BU : 
+var des = DataExtension.Retrieve(complexFilter,QueryAllAccounts);
+
+                      
+var birthdayDE = DataExtension.Init("CAMPAIGN_ASSET");
+                      
+for (var i = 0; i < des.length; i++) {
+
+birthdayDE.Rows.Remove(["Name"], [des[i].Name]);
+birthdayDE.Rows.Add({Name:des[i].Name, ASSET_TYPE:"Data Extension"});
+}
+
+
+
+
+</script>
+    </head>
+    <body >
+        %%[
+        SET @RS = LookupRows("CAMPAIGN_ASSET","ASSET_TYPE","Data Extension")                            
+        ]%%
+        %%[if rowcount(@RS) > 0   THEN ]%%
+        %%[for @i = 1 to Rowcount(@RS) do ]%%
+        <label id="de%%=v(@i)=%%" for="Student" style="display:none;">%%=v(Field(ROW(@rs, @i),"Name"))=%%</label>
+        %%[next @i]%%
+        %%[endif]%% 
+        %%[
+        SET @RS = LookupRows("EA_Article__c_Salesforce","isActive__c","True")                            
+        ]%%
+        %%[if rowcount(@RS) > 0   THEN ]%%
+        %%[for @j = 1 to Rowcount(@RS) do ]%%
+        <label id="produit%%=v(@j)=%%" for="Student" style="display:none;">%%=v(Field(ROW(@rs, @j),"Name"))=%%</label>
+        %%[next @j]%%
+        %%[endif]%% 
+      
+      
+    
+      
+      
+        <div class="row">
+            <img style=" display: block;margin-left: auto;margin-right: auto" src="http://image.s7.exacttarget.com/lib/fe9213727263077c77/m/1/logo-gmpa-mobile2.jpg" class="image">
+            <br />
+        </div>
+        <div style="margin-left: 20px;margin-right: 20px;width: 1024px;vertical-align: middle;margin: 0 auto;background-color: rgba(10, 10, 10, 0.5);">
+            <div>
+                <h1 style=" font-size: 2em;font-family: Arial;color: #FFF;margin-left: 10px;margin-top: 10px;">Print & Push Web </h1>
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="Student" style="text-align: right;clear: both;float:left;margin-right:15px; color: #ffffff;padding-left: 10px;font-family: Arial;font-size: 1em;font-weight: bold;">Libellé :</label>
+                <input id="nomcampagne" name="Student" />
+            </div>
+            <br />
+            <br />
+            <div class="form-group">
+                <label for="Student" style="text-align: right;clear: both;float:left;margin-right:15px; color: #ffffff;padding-left: 10px;font-family: Arial;font-size: 1em;font-weight: bold;">Type :</label>
+                <select id="typecampagne" onchange="myFunction3()">
+                    <option value="Push">Push</option>
+                    <option value="Print">Print</option>
+                </select>
+            </div>
+            <br />
+            <br />
+            <div>
+                <label for="Student" style="text-align: right;clear: both;float:left;margin-right:15px; color: #ffffff;padding-left: 10px;font-family: Arial;font-size: 1em;font-weight: bold;">Cible :</label>
+                <input id="project">
+                <input type="hidden" id="project-id">
+                
+				<label id="labelarticle" for="Student" style="text-align: right;clear: both;floamargin-right:15px; color: #ffffff;padding-left: 10px;font-family: Arial;font-size: 1em;font-weight: bold;" class="rule">Article :</label>
+                <input id="project2">
+                <input type="hidden" id="project2-id">
+                <button id="buttonprevisu" onclick="showhiddendiv()">Prévisualisation</button>
+            </div>
+            <br />
+            <br />
+            <br />
+            <div class="divtitle"> 
+                <label style="text-align: right;clear: both;float:left;margin-right:15px; color: #ffffff;padding-left: 10px;font-family: Arial;font-size: 1em;font-weight: bold;" class="titre">Validité de la campagne :&nbsp;</label>                 
+                <input id="startdate" type="date" name="anniversaire" class="calendar"> 
+                <label style="text-align: right;clear: both;margin-right:15px; color: #ffffff;padding-left: 10px;font-family: Arial;font-size: 1em;font-weight: bold;" class="titre">&nbsp;&nbsp;&nbsp;à</label>                 
+                <input id="enddate" type="date" name="anniversaire" class="calendar"> 
+                <button onclick="redirectok()" style="float: right;margin-right:15px; color: #OOO;padding-left: 10px;font-family: Arial;font-size: 1em;font-weight: bold;">Save</button>
+            </div>
+            <br />
+            <br />
+            <div id="hiddendiv" style="border: 5px black;border-style: solid;height:250px;background-color:#FFF;display: none;" >
+                <div style="float: left;width: 125px;text-align: right;margin: 2px 10px;display: inline;">
+                    <img src="http://www.battlefrontgames.co.uk/wp-content/uploads/2015/04/special-offer1.gif" />
+                </div>
+                <div style=" float: left;text-align: left;margin: 20px 150px;display: inline;">
+                    <h4><strong>Offre</strong> -<label id="offredate"for="Student" style="margin-right:15px;">01/01/1900</label></h4>
+                    <h3><label id="offrelabel" style="margin-right:15px;">Offre Spéciale</label></h3>
+                    <p>Offre spéciale</p>
+                    <p class="lireplus">> Lire la suite</p>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

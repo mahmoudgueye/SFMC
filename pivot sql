@@ -1,0 +1,16 @@
+SELECT PA.id_client, 
+MAX(case when RN = 1 then id_produit else null end) as Product1,
+MAX(case when RN = 2 then id_produit else null end) as Product2 ,
+MAX(case when RN = 3 then id_produit else null end) as Product3 ,
+max(RN) as nbreDeProduitsTotal
+FROM Panier_Abandon PA
+INNER JOIN 
+(
+    SELECT DPA.id_produit, DPA.id_client, DPA.montant_ttc,
+    ROW_NUMBER() OVER (PARTITION BY id_client ORDER BY montant_ttc) AS rn
+    FROM Detail_Panier_Abandon DPA
+    where date_ajout_panier > '6/29/2020 11:59:59 PM'
+) AS DPA2 
+on DPA2.id_client = PA.id_client
+where date_abandon_panier > '6/29/2020 11:59:59 PM'
+group by PA.id_client
