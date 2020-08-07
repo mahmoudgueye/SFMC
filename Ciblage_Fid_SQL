@@ -1,6 +1,3 @@
---Corsair / Levana / SFMC / Ciblage Fidelisation / Jan2020 
-
-numero Isabelle: 0615255171
 
 --Ciblage_ChangementStatut V2
 SELECT 
@@ -13,10 +10,7 @@ Carte.Date_de_fin_de_validite__c,  Carte.Type_de_carte__c
 FROM Account_Salesforce c
 Inner join Carte_de_fidelite__c_Salesforce Carte on c.PersonContactId = Carte.Contact__c
 WHERE
-NUM_CARTE_A2F_ACTIVE__PC is not null
-AND PersonEmail is not null
-AND Carte_Active__c = 'true'
-AND CONVERT(date, Date_changement_de_statut__c) = CONVERT(date, Dateadd(d, -1, GetDate()))
+ CONVERT(date, Date_changement_de_statut__c) = CONVERT(date, Dateadd(d, -1, GetDate()))
 AND(
 (lower(Type_de_carte__c) = 'le club gold' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club')
 OR
@@ -27,37 +21,21 @@ OR
 
 --Ciblage_Releve_Compte V2
 Select 
-c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,
-c.Cagnotte__pc,
-c.Num_Carte_A2F_active__pc,
-cf.Date_de_fin_de_validite__c,  
-Carte_Active__c
+c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail
 From Account_Salesforce c
 Inner Join Carte_de_fidelite__c_Salesforce cf on cf.Contact__c = c.PersonContactId
 Inner Join Coupon_de_Vol__c_Salesforce cv on cv.Contact__c = c.PersonContactId
 Where c.PersonEmail is not null
-And c.Num_Carte_A2F_active__pc is not null
-AND Carte_Active__c = 'true'
-AND cv.Dateduvol__c between dateadd(d, -730, getdate()) and getdate()
-AND Nombre_de_vols_realises__pc > 0
-group by c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail,c.Cagnotte__pc,c.Num_Carte_A2F_active__pc,cf.Date_de_fin_de_validite__c,
-Carte_Active__c
+group by c.PersonContactId, c.FirstName, c.LastName, c.PersonEmail
 
 
 --Ciblage_Recalcul de statut Descente V2
 SELECT 
-c.Id, FirstName, LastName,Cagnotte__pc, Statut__pc, 
-PersonEmail, Num_Carte_A2F_active__pc, Volume_achat_12_mois__pc,
-Carte.Name, Ancien_statut_de_la_carte_au_31_12__c, 
-Carte_Active__c,Civilite__c, PersonContactId,
-Date_changement_de_statut__c,
-Carte.Date_fin_val_statut__c,  Carte.Type_de_carte__c
+c.Id, FirstName, LastName,PersonContactId
 FROM Account_Salesforce c
 Inner join Carte_de_fidelite__c_Salesforce Carte on c.PersonContactId = Carte.Contact__c
 WHERE
- c.Num_Carte_A2F_active__pc is not null
-AND Carte_Active__c = 'true'
-AND convert(varchar,Date_changement_de_statut__c,101) = convert(varchar, DATEADD(YEAR,DATEDIFF(YEAR, -1, getdate() )-1, -1), 101)
+ convert(varchar,Date_changement_de_statut__c,101) = convert(varchar, DATEADD(YEAR,DATEDIFF(YEAR, -1, getdate() )-1, -1), 101)
 AND(
 (lower(Type_de_carte__c) = 'le club gold' AND lower(Ancien_statut_de_la_carte_au_31_12__c) = 'le club platinum')
 OR
@@ -122,48 +100,8 @@ AND Stop_email_Corsairfly__pc = 'false'
 AND ((FLOOR(DATEDIFF(DAY, convert(varchar,PersonBirthdate,101), convert(varchar,getdate(),101)) / 365.25) >= 16) OR PersonBirthdate ='' OR PersonBirthdate is null)
 AND (lower(BillingCountry) = 'france' OR (BillingCountry = '' AND  BillingPostalCode  NOT  LIKE '97%'))
 AND (c.PersonEmail is not null OR c.PersonEmail != '')
-AND c.PersonEmail not like ('%airfran%')
-AND c.PersonEmail not like ('%air-aust%')
-AND c.PersonEmail not like ('%frenchbee%')
-AND c.PersonEmail not like ('%iairgroup%')
-AND c.PersonEmail not like ('%@delta%')
-AND c.PersonEmail not like ('%@transat%')
-AND c.PersonEmail not like ('%@emirates%')
-AND c.PersonEmail not like ('%airmauritius%')
-AND c.PersonEmail not like ('%@ba.com%')x
+AND c.PersonEmail not like ('%concurents%')
 
-"Ciblage : 
-
-> Statut d'engagement (Libelle_Statut_Engagement__c) : hyper actif + super actif
-
-> Stop_email_Corsairfly__pc = Faux
-
-> Date de naissance (PersonBirthdate) = +16 ou vide
-
-> Pays (BillingCountry) = France ou vide
-
-> Si Pays (BillingCountry) = vide
-then check--> BillingPostalCode  
-> Billing Zip/Postal Code (BillingPostalCode) = ne commence pas par 97
-
-
-> Email (PersonEmail) = pas vide
-
-> Emails à exclure :  Email (PersonEmail) contient :
-- airfran
-- aircara
-- air-aust
-- frenchbee
-- iairgroup
-- @delta
-- @transat
-- @emirates
-- airmauritius
-- @ba.com
-
-> Date du vol (Dateduvol__c) --> le nom du champ Amadeus = j+30 (exclure les clients qui ont un vol dans 30 jours) ; inclure aussi les clients sans date de vol
-
-"
 
 
 --Ciblage Avant Vol J-7
@@ -243,7 +181,6 @@ cv.PNR__c = numero reservation
 num_carte_a2f_active__pc
 
 
-S4UI82 pnr
 
  SELECT 
 c.PersonEmail , COUNT(*) as "totalEmailCount"
