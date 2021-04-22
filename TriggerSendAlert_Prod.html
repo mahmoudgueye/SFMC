@@ -1,0 +1,206 @@
+<p>
+  TS Alert Monitoring --- POC V.0 --- MahmoudGUEYE --- Kering Tech --- Dec2020 <br>
+  To Test this code you can run this code in a cloudpage.
+</p>
+
+<script runat=server>
+  Platform.Load("Core","1.1.1");
+      
+  var mid = 0;
+  var dev = 0;
+  var allTriggers = 0;
+
+  var alertEmailAddress = ['L2SFMCTeam@kering.onmicrosoft.com','david.martin@kering.com'];
+  var alertSubKey = ['@@L2SFMCTeam@kering.onmicrosoft.com','@@david.martin@kering.com'];
+  var now = new Date();
+  var start = now.getTime();
+  var timeOut = 1680000; //28 minutes
+  //60000 
+
+  Write(start+"<br>")
+
+  if (allTriggers) {
+  var tsdArray = getTSDKeys(mid);
+  var length = tsdArray.Results.length;
+  Write("\nif "+length)
+} else {
+  var tsdArray = ["ForgotPWD_Email", "Welcome_Email", "return_form_completed", "update_account", "order_readyforpickup", "Order_Shipped", "Order_Cancellation", "Pending_Order", "Order_Confirmation", "Return_Accepted", "Newsletter_Registration_Email", "ForgotPWD_Email_Trigger_Send", "Welcome_Email_Trigger_Send"]
+  Write("\nelse "+tsdArray)
+  var length = tsdArray.length;
+  //var maxQueueArray = ["50","50","50","50","50","50","50","50","50","50","50","50","50"]; //Enter max queue here. Can make an array as well, if different maxes per TSD
+}
+
+if (!maxQueueArray || maxQueueArray.length == 0) {
+  var maxQueueDefault = 50; //Default for if not using maxQueueArray
+}
+
+if (dev) {
+  timeOut = 10000;
+  maxQueueArray = [];
+  maxQueueDefault = 5;
+}
+
+var alertArray = []
+var queueAlertArray = []
+
+Write("<br> dev"+dev+"<br>")
+
+var failures = 0;
+
+ for (i=0; i < length; i++) {
+  Write('<br><br>')
+    if(allTriggers) {
+      var customerKey = tsdArray.Results[i].CustomerKey
+    } else {
+      var customerKey = tsdArray[i]
+    }
+    Write('customerKey: ' + customerKey + '<br>')
+
+    var queued = getTSDQueue(customerKey);
+    Write('Queue: ' + queued + '<br>')
+
+    var alreadyFail = Stringify(alertArray).indexOf(customerKey);
+    Write('alreadyFail: ' + alreadyFail + '<br>')
+    dev ? Write('<hr><br>') : '';
+    dev ? Write('CustomerKey: ' + customerKey + '<br>') : '';
+    dev ? Write('Queue: ' + queued + '<br>') : '';
+    dev ? Write('RunTime: ' + (new Date().getTime() - start) + '<br>') : '';
+
+    var queueArrLength = maxQueueArray.length;
+
+    // changes maxQueue to array value if exist and equal to i
+    if (maxQueueArray.length > 0 && maxQueueArray.length <= i) {
+      var maxQueue = maxQueueArray[i];
+    } else {
+      var maxQueue = maxQueueDefault;
+    }
+    Write('maxQueueArray: ' + maxQueueArray + '<br>')
+    Write('maxQueueArray.length: ' + maxQueueArray.length + '<br>')
+    
+    
+    if (queued > maxQueue) {
+      
+      if (alreadyFail < 1) {
+        dev ? Write('<span style="color:red; font-weight:bold;">Queue Failure</span><br>') : '';
+        alertArray.push(customerKey)
+        queueAlertArray.push(queued)
+        failures += 1
+      }
+      Write('failures: ' + failures + '<br>')
+      Write('alertArray: ' + alertArray + '<br>')
+      Write('queueAlertArray: ' + queueAlertArray + '<br>')
+
+    }
+  }
+
+    Write('<br><br>failures: ' + failures + '<br>')
+   dev ? Write('<br>FAILURES: ' + failures + '<br><br><br>') : '';
+
+  if (failures > 0) {
+    var alertStr = Stringify(alertArray).replace('[','').replace(']','');
+    var queueAlertStr = Stringify(queueAlertArray).replace('[','').replace(']','');
+    var alertTrigger = sendTSDAlert(alertStr,queueAlertStr,alertEmailAddress,alertSubKey)
+    Write('alertTrigger: ' + alertTrigger + '<br>')
+    dev ? Write('<br>' + Stringify(alertTrigger) + '<br>') : '';
+  }
+
+/************************* FUNCTION LIST ************************/
+
+function getTSDKeys(mid) {
+  var prox = new Script.Util.WSProxy();
+
+  /* Set ClientID */
+  if (mid) {
+    prox.setClientId({ "ID": mid }); //Impersonates the BU
+  }
+
+  var cols = ["CustomerKey", "TriggeredSendStatus"];
+  var res = prox.retrieve("TriggeredSendDefinition", cols, filter);
+
+  var results = res
+   
+  return results;
+}
+
+function getTSDQueue(customerKey) {
+
+  var prox = new Script.Util.WSProxy();
+  
+  /* Set ClientID */
+  if (mid) {
+    prox.setClientId({ "ID": mid }); //Impersonates the BU
+  }
+
+
+  var cols = ["CustomerKey","Queued"];
+  var filter = {
+      Property: "CustomerKey",
+      SimpleOperator: "Equals",
+      Value: customerKey
+  };
+  var res = prox.retrieve("TriggeredSendSummary", cols, filter);
+
+  var queue = res.Results[0].Queued
+
+  return queue;
+}
+    
+  function sendTSDAlert(alertStr,queueAlertStr,emailAddress,subKey) {
+
+    var proxy = new Script.Util.WSProxy();
+    var customerKey = "Monitoring_TriggerSend";
+    var name = "Monitoring_TriggerSend";
+    var length = emailAddress.length;
+    var arrContacts = []
+
+    for (var i=0; i < length; i++) {
+      var ts= {
+             TriggeredSendDefinition: {CustomerKey: customerKey, Name: name}
+             ,Subscribers: [ {
+                    EmailAddress: emailAddress[i]
+                  , SubscriberKey: subKey[i]
+                  , Attributes: [
+                      {
+                       Name: 'tsdList',
+                        Value: alertStr
+                     },
+                     {
+                      Name: 'tsdQueue',
+                      Value: queueAlertStr
+                     }
+                  ]
+              }]
+
+          };
+      Write('<br>ts: ' + Stringify(ts) + '<br>')
+      var res = proxy.createItem("TriggeredSend", ts);
+      Write('res: ' + Stringify(res) + '<br><br>')
+
+
+      //Log Errors in Moniroting Log DE
+      if(res.Status != "OK"){
+        var arrContacts = {
+                EmailAddress:emailAddress[i], 
+                SubscriberKey:subKey[i],
+                CreatedDate:now, 
+                Payload:Stringify(ts), 
+                TS:alertStr, 
+                Queues:queueAlertStr, 
+                Response:Stringify(res)
+              };
+        Write('arrContacts: ' + Stringify(arrContacts) + '<br><br>')
+        logErrors(arrContacts);
+      }
+        
+    }
+    return res;
+  }
+ 
+ 
+    //Log Errors in Moniroting Log DE
+  function logErrors(addContacts){
+  var logDE = DataExtension.Init("Monitoring Error Log");
+  logDE.Rows.Add(addContacts);
+  }
+
+</script>

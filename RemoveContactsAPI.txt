@@ -1,0 +1,58 @@
+//RemoveContactsAPI
+<script type="javascript" runat="server">
+
+Platform.Load("core","1.1.5");
+
+var DE = "CustomerMergeEntriesDeletion";
+var logDE = "DeleteLogDE";
+var log = DataExtension.Init(logDE);
+var Output = " ";
+
+var url = 'https://mc1bc8d27m8kpk5ywx0410qk15t4.auth.marketingcloudapis.com/v2/token';
+var contentType = 'application/json';
+var  payload = '{"client_id":"3hps5g5czd580l9fseik577z",';
+payload += '"client_secret":"rnQbgYRIuDCgNIVejXgu26O5",';
+payload += '"grant_type":"client_credentials",';
+payload += '"account_id":"100001946"}';
+
+var accessTokenResult = HTTP.Post(url, contentType, payload); 
+var statusCode = result["StatusCode"];
+var accessToken = Platform.Function.ParseJSON(accessTokenResult["Response"][0]).access_token;
+Output += "<br><br> accessToken : "+accessToken;
+
+url = "https://mc1bc8d27m8kpk5ywx0410qk15t4.rest.marketingcloudapis.com/contacts";
+url += "/v1/contacts/actions/delete?type=listReference";
+var headerNames = ["Authorization"];
+var headerValues = ["Bearer " +accessToken];
+payload = '{';
+payload += ' "deleteOperationType": "ContactAndAttributes",';
+payload += ' "targetList": {';
+payload += '   "listType": {';
+payload += '     "listTypeID": 3';
+payload += '   },';
+payload += '   "listKey": "' + DE  + '"';
+payload += ' },';
+payload += ' "deleteListWhenCompleted": false,';
+payload += ' "deleteListContentsWhenCompleted": false';
+payload += '}';
+Output += "<br><br> payload = "+payload;
+
+try {
+
+  var result = HTTP.Post(url, contentType, Stringify(payload), headerNames, headerValues);
+    Output += "<br><br>  result = "+result;
+
+  result = Stringify(result).replace(/[\n\r]/g, '');
+  log.Rows.Add({"Message": "Zombies deletion result: " + result});
+  Output += "<br><br>  SUCCESS = "+result;
+
+} catch (e) {
+
+  e = Stringify(e).replace(/[\n\r]/g, '')
+  log.Rows.Add({"Message": "Zombies deletion error: " + e});
+  Output += "<br><br>  error = "+e;
+
+}
+
+Write(Output);
+</script>

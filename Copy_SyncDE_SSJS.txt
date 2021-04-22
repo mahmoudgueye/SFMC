@@ -1,0 +1,91 @@
+<script runat="server" language="javascript">
+
+Platform.Load("core", "1.1.5");
+  function write_debug(content) {
+        Write('<div class="debug">'+content+'</div>');
+    }
+var sfMask = "_Salesforce";
+write_debug(sfMask);
+
+  var prox = new Script.Util.WSProxy();
+  var filter = { Property:"CustomerKey",SimpleOperator:"like", Value: sfMask }
+
+  var rowsList = ["Name", "CustomerKey", "CategoryID", "IsSendable"];
+
+  var listDataExtension = prox.retrieve("DataExtension",rowsList,filter);
+  
+ write_debug(listDataExtension.Status);
+ write_debug(listDataExtension);
+if (listDataExtension.Status == "OK" && listDataExtension.Results.length > 0) {
+
+    write_debug("Trouve " + listDataExtension.Results.length + " Salesforce Data Extension");
+  
+  for(var i=0;i < listDataExtension.Results.length;i++){
+      var curData = listDataExtension.Results[i];
+     var newName = curData.Name.replace(sfMask,"DE_"+sfMask);
+      write_debug("<br>" + curData.Name + " --> " + newName);
+     
+          var rootDataExtension = '6965'; //folderId
+     var test = duplicateDataExtension(curData,newName,newName,rootDataExtension);
+      write_debug(" : " + test);
+    }
+
+}
+
+  /*------------------------------------------------------------------*/
+ function duplicateDataExtension (templateDatas,localCKey,localName,localDestFolder) {
+    var localStatus = "OK";
+
+    var colsToRetrieve = ["Name","FieldType","MaxLength","IsPrimaryKey","IsRequired","DefaultValue","Ordinal","Scale"];
+
+    var templateCKey = templateDatas.CustomerKey;
+
+    var filter = { 
+      Property: "DataExtension.CustomerKey", 
+      SimpleOperator: "equals", 
+      Value: templateCKey
+    };
+    
+    var desc = prox.retrieve("DataExtensionField",colsToRetrieve, filter);
+    desc = desc["Results"];
+    write_debug('desc[x]["FieldType"] '+desc[0]["FieldType"]);
+       var descFields = [];
+   for (var x=0;x<desc.length;x++) {
+      var curItem = desc[x];
+     if(curItem.Name.substring(0,1) != "_") {
+        var curField = {};
+        var dataType = curItem["FieldType"];
+        for (var y=0;y<colsToRetrieve.length;y++) {
+          var add = true;
+          if (colsToRetrieve[y] == "DefaultValue" && curItem[colsToRetrieve[y]] == "") add = false;
+          if (colsToRetrieve[y] == "IsPrimaryKey" && curItem[colsToRetrieve[y]] == false) add = false;
+          if (dataType != "Text" && colsToRetrieve[y] == "MaxLength") add = false;
+          if (dataType == "Text" && colsToRetrieve[y] == "MaxLength" && curItem[colsToRetrieve[y]] == 0) add = false;
+          if(add) curField[colsToRetrieve[y]] = curItem[colsToRetrieve[y]]; 
+          
+        }
+        descFields.push(curField);
+     }
+   }
+   
+   descFields = descFields.sort(function(a,b) { return (a.Ordinal > b.Ordinal ? 1 : (b.Ordinal > a.Ordinal ? -1 : 0)); });
+
+   var obj = { 
+      "CustomerKey": localCKey, 
+      "Name": localName, 
+      "CategoryID": localDestFolder,
+      "Fields": descFields
+    };
+    
+try {
+      var myDE = prox.createItem("DataExtension", obj);
+    } catch (e) {
+      localStatus = "(catch)DataExtension creation Error : " + e.message;
+    }
+   write_debug('localStatus 5 '+localStatus);
+
+   return localStatus;
+  }
+  /* -------------------------------------------------------- */
+
+</script>
